@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>四択クイズ（CSV出力付き）</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f3f3;
+      text-align: center;
+      padding: 30px;
+    }
+    .quiz-box {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin: auto;
+    }
+    h2 {
+      font-size: 24px;
+    }
+    .choice {
+      margin: 10px 0;
+      padding: 12px;
+      background-color: #e6e6e6;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .choice:hover {
+      background-color: #d1d1d1;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    #download {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-box">
+    <h2 id="question">ここに問題が表示されます</h2>
+    <div id="choices"></div>
+    <div id="result"></div>
+    <button id="download" onclick="downloadCSV()">CSVで結果を保存</button>
+  </div>
+
+  <script>
+    const quiz = [
+      {
+        question: "日本の首都は？",
+        choices: ["大阪", "名古屋", "東京", "札幌"],
+        answer: 2
+      },
+      {
+        question: "HTMLの意味は？",
+        choices: ["Hyper Tool Markup Language", "Hyper Text Markup Language", "Hot Mail Text Language", "Home Text Machine Language"],
+        answer: 1
+      },
+      {
+        question: "富士山の高さは？",
+        choices: ["2,776m", "3,776m", "4,776m", "1,776m"],
+        answer: 1
+      }
+    ];
+
+    let current = 0;
+    let score = 0;
+    const answers = [];
+
+    const questionEl = document.getElementById("question");
+    const choicesEl = document.getElementById("choices");
+    const resultEl = document.getElementById("result");
+    const downloadBtn = document.getElementById("download");
+
+    function showQuestion() {
+      const q = quiz[current];
+      questionEl.textContent = `Q${current + 1}. ${q.question}`;
+      choicesEl.innerHTML = "";
+      resultEl.textContent = "";
+
+      q.choices.forEach((choice, i) => {
+        const btn = document.createElement("div");
+        btn.className = "choice";
+        btn.textContent = choice;
+        btn.onclick = () => checkAnswer(i);
+        choicesEl.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(selected) {
+      const q = quiz[current];
+      const isCorrect = selected === q.answer;
+      if (isCorrect) {
+        resultEl.textContent = "正解！";
+        resultEl.style.color = "green";
+        score++;
+      } else {
+        resultEl.textContent = `不正解。正解は「${q.choices[q.answer]}」`;
+        resultEl.style.color = "red";
+      }
+
+      // 回答履歴に記録
+      answers.push({
+        No: current + 1,
+        Question: q.question,
+        Selected: q.choices[selected],
+        Correct: q.choices[q.answer],
+        Result: isCorrect ? "○" : "×"
+      });
+
+      current++;
+      setTimeout(() => {
+        if (current < quiz.length) {
+          showQuestion();
+        } else {
+          showResult();
+        }
+      }, 1000);
+    }
+
+    function showResult() {
+      questionEl.textContent = "クイズ終了！";
+      choicesEl.innerHTML = "";
+      resultEl.innerHTML = `あなたのスコアは <strong>${score} / ${quiz.length}</strong> です。`;
+      resultEl.style.color = "black";
+      downloadBtn.style.display = "inline-block";
+    }
+
+    function downloadCSV() {
+      let csv = "No,Question,Selected Answer,Correct Answer,Result\n";
+      answers.forEach(row => {
+        csv += `${row.No},"${row.Question}","${row.Selected}","${row.Correct}",${row.Result}\n`;
+      });
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "quiz_results.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    showQuestion();
+  </script>
+</body>
+</html>
